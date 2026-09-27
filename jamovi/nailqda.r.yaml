@@ -33,7 +33,7 @@ items:
       
   - name: response
     title: LLM interpretation
-    type: Preformatted
+    type: Html
     clearWith:
       - product
       - panelist

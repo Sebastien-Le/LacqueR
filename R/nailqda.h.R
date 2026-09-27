@@ -118,7 +118,7 @@ nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                     "panelist",
                     "attributes",
                     "introduction")))
-            self$add(jmvcore::Preformatted$new(
+            self$add(jmvcore::Html$new(
                 options=options,
                 name="response",
                 title="LLM interpretation",
@@ -166,7 +166,7 @@ nailqdaBase <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
 #'   \code{results$status} \tab \tab \tab \tab \tab a preformatted \cr
 #'   \code{results$evidence} \tab \tab \tab \tab \tab a preformatted \cr
 #'   \code{results$prompt} \tab \tab \tab \tab \tab a preformatted \cr
-#'   \code{results$response} \tab \tab \tab \tab \tab a preformatted \cr
+#'   \code{results$response} \tab \tab \tab \tab \tab a html \cr
 #' }
 #'
 #' @export

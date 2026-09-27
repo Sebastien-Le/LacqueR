@@ -248,6 +248,90 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
         remove_blocks(text)
       }
 
+      # Escape untrusted text before introducing our own HTML tags.
+      response_to_html <- function(text) {
+        escapes <- c("&" = "&amp;", "<" = "&lt;", ">" = "&gt;",
+                     '"' = "&quot;", "'" = "&#39;", "`" = "&#96;",
+                     "\\" = "&#92;", "@" = "&#64;", "+" = "&#43;")
+        for (symbol in names(escapes))
+          text <- gsub(symbol, escapes[[symbol]], text, fixed = TRUE)
+
+        inline <- function(line) {
+          # Keep lines containing unsupported inline constructs literal.
+          if (grepl("&#96;|&#92;|&lt;|\\[", line, perl = TRUE))
+            return(line)
+          line <- gsub("(?<!\\*)\\*\\*([^*[:space:]](?:[^*]*[^*[:space:]])?)\\*\\*(?!\\*)",
+                       "<strong>\\1</strong>", line, perl = TRUE)
+          gsub("(?<!\\*)\\*([^*[:space:]](?:[^*]*[^*[:space:]])?)\\*(?!\\*)",
+               "<em>\\1</em>", line, perl = TRUE)
+        }
+
+        output <- character()
+        paragraph <- character()
+        list_type <- ""
+        fence <- ""
+        flush_paragraph <- function() {
+          if (length(paragraph)) {
+            output <<- c(output, paste0("<p>", paste(paragraph, collapse = "<br>"), "</p>"))
+            paragraph <<- character()
+          }
+        }
+        close_list <- function() {
+          if (nzchar(list_type)) {
+            output <<- c(output, paste0("</", list_type, ">"))
+            list_type <<- ""
+          }
+        }
+
+        for (line in strsplit(text, "\r\n|\n|\r", perl = TRUE)[[1]]) {
+          marker <- regmatches(line, regexpr("^[ \\t]*(?:(&#96;){3,}|~{3,})", line, perl = TRUE))
+          if (nzchar(fence) || length(marker)) {
+            close_list()
+            paragraph <- c(paragraph, line)
+            if (!nzchar(fence)) {
+              fence <- trimws(marker)
+            } else if (identical(trimws(line), fence)) {
+              fence <- ""
+            }
+            next
+          }
+          if (!nzchar(trimws(line))) {
+            flush_paragraph()
+            close_list()
+            next
+          }
+          heading <- regexpr("^#{1,3} +", line)
+          bullet <- grepl("^[-*] +[^ ]", line)
+          numbered <- grepl("^[0-9]{1,9}\\. +[^ ]", line)
+          if (heading[1] == 1L) {
+            flush_paragraph()
+            close_list()
+            level <- nchar(sub(" .*", "", line))
+            label <- substring(line, attr(heading, "match.length") + 1L)
+            output <- c(output, paste0("<h", level, ">", inline(label), "</h", level, ">"))
+          } else if (bullet || numbered) {
+            flush_paragraph()
+            type <- if (bullet) "ul" else "ol"
+            if (!identical(list_type, type)) {
+              close_list()
+              output <- c(output, paste0("<", type, ">"))
+              list_type <- type
+            }
+            value <- if (numbered)
+              paste0(' value="', sub("\\..*", "", line), '"') else ""
+            label <- sub("^([-*]|[0-9]{1,9}\\.) +", "", line)
+            output <- c(output, paste0("<li", value, ">", inline(label), "</li>"))
+          } else {
+            close_list()
+            paragraph <- c(paragraph, if (grepl("^[ \\t]", line)) line else inline(line))
+          }
+        }
+        flush_paragraph()
+        close_list()
+        # No raw line breaks: untrusted text cannot begin a knitr chunk line.
+        paste(output, collapse = "")
+      }
+
       # ------------------------------------------------------------
       # 8. Evidence
       # ------------------------------------------------------------
@@ -298,7 +382,7 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
       )
       
       self$results$response$setContent(
-        clean_response_text(to_text(response))
+        response_to_html(clean_response_text(to_text(response)))
       )
     }
   )
