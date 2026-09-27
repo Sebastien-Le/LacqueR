@@ -1,6 +1,6 @@
 ---
 title: What the Package Does (Title Case)
-name: PolisherPOC
+name: LacqueR
 version: 0.0.0
 jms: '1.0'
 authors:
@@ -14,8 +14,8 @@ description: >-
 analyses:
   - title: AI-assisted QDA (PoC)
     name: nailqda
-    ns: PolisherPOC
-    menuGroup: PolisherPoc
+    ns: LacqueR
+    menuGroup: LacqueR
     menuTitle: AI-assisted QDA (PoC)
 usesNative: true
 minApp: 1.0.8

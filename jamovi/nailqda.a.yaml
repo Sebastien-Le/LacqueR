@@ -1,7 +1,7 @@
 ---
 name:  nailqda
 title: AI-assisted QDA (PoC)
-menuGroup: PolisherPoc
+menuGroup: LacqueR
 version: '1.0.0'
 jas: '1.2'
 
