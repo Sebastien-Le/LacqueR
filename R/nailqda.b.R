@@ -11,17 +11,47 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
       # 1. Wait until the required variables have been selected
       # ------------------------------------------------------------
       
-      if (is.null(self$options$product))
+      request <- self$options$generationRequest
+      state <- self$results$generationState$state
+      if (is.null(state)) {
+        # An identifier restored without its state is never a fresh click.
+        state <- list(lastRequest = request,
+                      consumedRequests = if (nzchar(request)) request else character(),
+                      inputSignature = NULL,
+                      preparedSignature = NULL, responseSignature = NULL,
+                      response = NULL, status = "Ready", message = "",
+                      duration = NULL)
+      }
+      new_request <- nzchar(request) && !request %in% state$consumedRequests
+      if (new_request) {
+        state$lastRequest <- request
+        state$consumedRequests <- c(state$consumedRequests, request)
+      }
+
+      publish_status <- function() {
+        self$results$generationState$setState(state)
+        text <- c(state$status, state$message)
+        if (!is.null(state$duration))
+          text <- c(text, sprintf("Generation elapsed: %.2f s", state$duration))
+        self$results$status$setContent(paste(text[nzchar(text)], collapse = "\n"))
+      }
+
+      if (is.null(self$options$product) || is.null(self$options$panelist) ||
+          length(self$options$attributes) == 0L) {
+        state["response"] <- list(NULL)
+        state$preparedSignature <- NULL
+        state$status <- "Ready"
+        state$message <- if (is.null(state$responseSignature))
+          "Select Product, Panelist and Sensory Attributes." else
+          "Inputs changed — generate a new interpretation"
+        state$duration <- NULL
+        self$results$response$setContent("")
+        self$results$evidence$setContent("")
+        self$results$prompt$setContent("")
+        publish_status()
         return()
-      
-      if (is.null(self$options$panelist))
-        return()
-      
-      if (is.null(self$options$attributes) ||
-          length(self$options$attributes) == 0)
-        return()
-      
-      
+      }
+
       product <- as.character(self$options$product)
       panelist <- as.character(self$options$panelist)
       attributes <- as.character(self$options$attributes)
@@ -57,97 +87,91 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
       
       
       # ------------------------------------------------------------
-      # 3. Decide whether the LLM should be called
+      # 3. Prepare the exact inputs and identify a fresh request
       # ------------------------------------------------------------
-      
-      generate <- isTRUE(self$options$generate)
-      
+
       model <- trimws(as.character(self$options$model))
-      
       if (!nzchar(model))
         model <- "mistral-small3.2"
-      
-      
-      
-      # ------------------------------------------------------------
-      # 5. Run NaileR
-      #
-      # SensoMineR::decat() calls par() even with graph = FALSE,
-      # so provide a null graphics device.
-      # ------------------------------------------------------------
-      
-      grDevices::pdf(file = NULL)
-      null_device <- grDevices::dev.cur()
-      
-      res <- tryCatch(
-        
-        NaileR::nail_qda(
-          dataset = data_qda,
-          formul = "~.Product+.Panelist",
-          firstvar = 3,
-          lastvar = ncol(data_qda),
-          
-          introduction = introduction,
-          
-          isolate.groups = FALSE,
-          drop.negative = FALSE,
-          
-          proba = 0.05,
-          sample.pct = 1,
-          sample.method = "stratified",
-          
-          prompt_style = "detailed",
-          product_knowledge = "known",
-          
-          provider = "ollama",
-          model = model,
-          
-          generate = generate
-        ),
-        
-        error = function(e) {
-          
-          jmvcore::reject(
-            paste0(
-              "NaileR QDA failed: ",
-              conditionMessage(e)
-            )
-          )
-          
-          NULL
-        },
-        
-        finally = {
-          
-          devices <- grDevices::dev.list()
-          
-          if (!is.null(devices) &&
-              null_device %in% devices) {
-            
-            grDevices::dev.off(null_device)
-          }
-        }
+
+      qda_args <- list(
+        dataset = data_qda,
+        formul = "~.Product+.Panelist",
+        firstvar = 3,
+        lastvar = ncol(data_qda),
+        introduction = introduction,
+        isolate.groups = FALSE,
+        drop.negative = FALSE,
+        proba = 0.05,
+        sample.pct = 1,
+        sample.method = "stratified",
+        prompt_style = "detailed",
+        product_knowledge = "known",
+        provider = "ollama",
+        model = model
       )
-      
-      
-      if (is.null(res))
-        return()
-      
-      
-      # ------------------------------------------------------------
-      # 6. Retrieve NaileR artifacts
-      # ------------------------------------------------------------
-      
-      evidence <- NaileR::nail_evidence(res)
-      prompt <- NaileR::nail_prompt(res)
-      
-      response <- if (generate) {
-        NaileR::nail_response(res)
-      } else {
-        NULL
+      input_signature <- function() {
+        path <- tempfile("lacquer-inputs-")
+        on.exit(unlink(path), add = TRUE)
+        saveRDS(list(variables = variables, arguments = qda_args), path,
+                compress = FALSE, version = 2)
+        unname(tools::md5sum(path))
       }
-      
-      
+      signature <- input_signature()
+      prepared <- identical(signature, state$preparedSignature)
+      if (!identical(signature, state$inputSignature)) {
+        state["response"] <- list(NULL)
+        state$status <- "Ready"
+        state$message <- if (is.null(state$responseSignature)) "" else
+          "Inputs changed — generate a new interpretation"
+        state$duration <- NULL
+      } else if (identical(state$status, "Generating interpretation…")) {
+        state["response"] <- list(NULL)
+        state$status <- "Error"
+        state$message <- "Previous generation did not complete. Click Generate interpretation to retry."
+      }
+      state$inputSignature <- signature
+      publish_status()
+
+      # Keep the null graphics device around each NaileR call.
+      run_qda <- function(generate) {
+        grDevices::pdf(file = NULL)
+        null_device <- grDevices::dev.cur()
+        on.exit({
+          devices <- grDevices::dev.list()
+          if (!is.null(devices) && null_device %in% devices)
+            grDevices::dev.off(null_device)
+        }, add = TRUE)
+        do.call(NaileR::nail_qda, c(qda_args, list(generate = generate)))
+      }
+      failure <- function(e) {
+        if (inherits(e, "restart"))
+          stop(e)
+        list(error = conditionMessage(e))
+      }
+
+      # Evidence and prompt are always obtained without calling the LLM.
+      preview <- tryCatch({
+        res <- run_qda(FALSE)
+        list(evidence = NaileR::nail_evidence(res),
+             prompt = NaileR::nail_prompt(res, print = FALSE))
+      }, error = failure)
+      if (!is.null(preview$error)) {
+        state$preparedSignature <- NULL
+        state["response"] <- list(NULL)
+        state$status <- "Error"
+        state$message <- paste("NaileR QDA failed:", preview$error)
+        state$duration <- NULL
+        self$results$response$setContent("")
+        self$results$evidence$setContent("")
+        self$results$prompt$setContent("")
+        publish_status()
+        return()
+      }
+      state$preparedSignature <- signature
+      evidence <- preview$evidence
+      prompt <- preview$prompt
+
       # ------------------------------------------------------------
       # 7. Small formatter for prompt / response
       # ------------------------------------------------------------
@@ -352,27 +376,6 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
       # 9. Display results
       # ------------------------------------------------------------
       
-      self$results$status$setContent(
-        paste0(
-          "SUCCESS\n\n",
-          "NaileR version: ",
-          as.character(utils::packageVersion("NaileR")),
-          "\n",
-          "Provider: Ollama\n",
-          "Model: ", model, "\n",
-          "Product: ", product, "\n",
-          "Panelist: ", panelist, "\n",
-          "Sensory attributes: ",
-          paste(attributes, collapse = ", "),
-          "\n\n",
-          "generate = ", generate,
-          if (generate)
-            "\nLLM call completed."
-          else
-            "\nNo LLM call has been made."
-        )
-      )
-      
       self$results$evidence$setContent(
         evidence_text
       )
@@ -381,9 +384,46 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
         to_text(prompt)
       )
       
+      if (new_request && prepared) {
+        state["response"] <- list(NULL)
+        state$status <- "Generating interpretation…"
+        state$message <- ""
+        state$duration <- NULL
+        self$results$response$setContent("")
+        publish_status()
+        # Preserve the consumed identifier for normal engine re-executions.
+        if (is.function(private$.statePathSource))
+          self$.save()
+        private$.checkpoint()
+
+        started <- proc.time()[["elapsed"]]
+        generated <- tryCatch({
+          res <- run_qda(TRUE)
+          response <- NaileR::nail_response(res, print = FALSE)
+          if (!is.character(response) || !length(response) || anyNA(response) ||
+              !any(nzchar(trimws(response))))
+            stop("NaileR returned an empty or invalid interpretation.")
+          list(response = response)
+        }, error = failure)
+        state$duration <- unname(proc.time()[["elapsed"]] - started)
+        if (!is.null(generated$error)) {
+          state$status <- "Error"
+          state$message <- paste("Generation failed:", generated$error)
+        } else {
+          state$response <- generated$response
+          state$responseSignature <- signature
+          state$status <- "Complete"
+          state$message <- ""
+        }
+      } else if (new_request) {
+        state$status <- "Ready"
+        state$message <- "Inputs changed — generate a new interpretation"
+      }
+      response <- state$response
       self$results$response$setContent(
         response_to_html(clean_response_text(to_text(response)))
       )
+      publish_status()
     }
   )
 )

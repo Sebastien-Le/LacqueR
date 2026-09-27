@@ -4,6 +4,9 @@ jus: '3.0'
 stage: 0
 compilerMode: tame
 
+events:
+  loaded: generation_loaded
+
 children:
   - type: VariableSupplier
     persistentItems: false
@@ -59,5 +62,5 @@ children:
             format: string
             width: large
 
-          - type: CheckBox
-            name: generate
+          - type: CustomControl
+            name: generationControl

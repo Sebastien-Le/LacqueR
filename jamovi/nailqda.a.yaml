@@ -43,8 +43,8 @@ options:
     type: String
     default: "mistral-small3.2"
 
-  - name: generate
-    title: Generate interpretation with Ollama
-    type: Bool
-    default: false
+  - name: generationRequest
+    type: String
+    hidden: true
+    default: ""
 ...

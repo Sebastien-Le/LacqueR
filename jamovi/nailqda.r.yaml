@@ -4,6 +4,11 @@ title: AI-assisted QDA (PoC)
 jrs: '1.1'
 
 items:
+  - name: generationState
+    type: Preformatted
+    visible: false
+    clearWith: []
+
   - name: status
     title: NaileR integration
     type: Preformatted
@@ -12,6 +17,8 @@ items:
       - panelist
       - attributes
       - introduction
+      - model
+      - generationRequest
 
   - name: evidence
     title: Evidence produced by NaileR
@@ -40,6 +47,6 @@ items:
       - attributes
       - introduction
       - model
-      - generate
+      - generationRequest
 
 ...
