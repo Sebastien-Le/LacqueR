@@ -201,6 +201,54 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
       
       
       # ------------------------------------------------------------
+      # Display-only cleanup; keep response unchanged
+      # ------------------------------------------------------------
+
+      clean_response_text <- function(text) {
+        block <- paste0(
+          "(?s)<!-- NAILER_PRODUCT_INTERPRETATION[[:space:]]+",
+          "(?:(?!<!--|-->|END_NAILER_PRODUCT_INTERPRETATION).)*",
+          "END_NAILER_PRODUCT_INTERPRETATION[[:space:]]*-->"
+        )
+        remove_blocks <- function(x) gsub(block, "", x, perl = TRUE)
+
+        # If any technical marker remains, preserve the malformed response.
+        if (grepl("NAILER_PRODUCT_INTERPRETATION", remove_blocks(text),
+                  fixed = TRUE))
+          return(text)
+
+        # Unwrap only metadata-only HTML fences or an external narration fence.
+        for (language in c("html", "markdown")) {
+          fence <- paste0(
+            "(?ms)^[ \\t]*```", language, "[ \\t]*\\r?\\n",
+            ".*?^[ \\t]*```[ \\t]*(?:\\r?\\n|$)"
+          )
+          matches <- gregexpr(fence, text, perl = TRUE)[[1]]
+          lengths <- attr(matches, "match.length")
+          for (i in rev(seq_along(matches))) {
+            if (matches[i] < 0L)
+              next
+            start <- matches[i]
+            end <- start + lengths[i] - 1L
+            wrapped <- substr(text, start, end)
+            body <- sub("^[^\\n]*\\n", "", wrapped, perl = TRUE)
+            body <- sub("(?m)^[ \\t]*```[ \\t]*(?:\\r?\\n)?$", "",
+                        body, perl = TRUE)
+            before <- substr(text, 1L, start - 1L)
+            after <- substring(text, end + 1L)
+            metadata_only <- grepl(block, body, perl = TRUE) &&
+              !nzchar(trimws(remove_blocks(body)))
+            external <- !nzchar(trimws(remove_blocks(paste0(before, after))))
+            if (!grepl("(?m)^[ \\t]*```", body, perl = TRUE) &&
+                ((language == "html" && metadata_only) ||
+                 (language == "markdown" && external)))
+              text <- paste0(before, body, after)
+          }
+        }
+        remove_blocks(text)
+      }
+
+      # ------------------------------------------------------------
       # 8. Evidence
       # ------------------------------------------------------------
       
@@ -250,7 +298,7 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
       )
       
       self$results$response$setContent(
-        to_text(response)
+        clean_response_text(to_text(response))
       )
     }
   )
