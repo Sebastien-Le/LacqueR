@@ -1,0 +1,45 @@
+---
+name: nailqda
+title: AI-assisted QDA (PoC)
+jrs: '1.1'
+
+items:
+  - name: status
+    title: NaileR integration
+    type: Preformatted
+    clearWith:
+      - product
+      - panelist
+      - attributes
+      - introduction
+
+  - name: evidence
+    title: Evidence produced by NaileR
+    type: Preformatted
+    clearWith:
+      - product
+      - panelist
+      - attributes
+      - introduction
+
+  - name: prompt
+    title: Prompt produced by NaileR
+    type: Preformatted
+    clearWith:
+      - product
+      - panelist
+      - attributes
+      - introduction
+      
+  - name: response
+    title: LLM interpretation
+    type: Preformatted
+    clearWith:
+      - product
+      - panelist
+      - attributes
+      - introduction
+      - model
+      - generate
+
+...

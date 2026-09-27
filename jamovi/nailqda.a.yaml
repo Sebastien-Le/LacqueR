@@ -1,0 +1,50 @@
+---
+name:  nailqda
+title: AI-assisted QDA (PoC)
+menuGroup: PolisherPoc
+version: '1.0.0'
+jas: '1.2'
+
+options:
+  - name: data
+    type: Data
+
+  - name: product
+    title: Product
+    type: Variable
+    suggested:
+      - nominal
+    permitted:
+      - factor
+
+  - name: panelist
+    title: Panelist
+    type: Variable
+    suggested:
+      - nominal
+    permitted:
+      - factor
+
+  - name: attributes
+    title: Sensory Attributes
+    type: Variables
+    suggested:
+      - continuous
+    permitted:
+      - numeric
+
+  - name: introduction
+    title: Context / introduction
+    type: String
+    default: ""
+    
+  - name: model
+    title: Ollama model
+    type: String
+    default: "mistral-small3.2"
+
+  - name: generate
+    title: Generate interpretation with Ollama
+    type: Bool
+    default: false
+...

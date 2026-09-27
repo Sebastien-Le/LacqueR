@@ -1,0 +1,63 @@
+title: AI-assisted QDA (PoC)
+name: nailqda
+jus: '3.0'
+stage: 0
+compilerMode: tame
+
+children:
+  - type: VariableSupplier
+    persistentItems: false
+    stretchFactor: 1
+    children:
+      - type: TargetLayoutBox
+        label: Product
+        children:
+          - type: VariablesListBox
+            name: product
+            maxItemCount: 1
+            isTarget: true
+
+      - type: TargetLayoutBox
+        label: Panelist
+        children:
+          - type: VariablesListBox
+            name: panelist
+            maxItemCount: 1
+            isTarget: true
+
+      - type: TargetLayoutBox
+        label: Sensory Attributes
+        children:
+          - type: VariablesListBox
+            name: attributes
+            isTarget: true
+
+  - type: LayoutBox
+    margin: large
+    stretchFactor: 1
+    children:
+      - type: Label
+        label: Interpretation context
+        stretchFactor: 1
+        children:
+          - type: TextBox
+            name: introduction
+            format: string
+            width: large
+            stretchFactor: 1
+            
+  - type: LayoutBox
+    margin: large
+    stretchFactor: 1
+    children:
+      - type: Label
+        label: Ollama
+        stretchFactor: 1
+        children:
+          - type: TextBox
+            name: model
+            format: string
+            width: large
+
+          - type: CheckBox
+            name: generate
