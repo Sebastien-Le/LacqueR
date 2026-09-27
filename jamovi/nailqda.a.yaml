@@ -36,6 +36,7 @@ options:
   - name: introduction
     title: Context / introduction
     type: String
+    hidden: true
     default: ""
     
   - name: model

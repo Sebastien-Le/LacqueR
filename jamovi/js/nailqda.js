@@ -2,6 +2,37 @@
 
 module.exports = {
     generation_loaded(ui) {
+        const contextContainer = ui.introductionControl.$el[0];
+        let textarea = contextContainer.querySelector('textarea');
+        if (!textarea) {
+            textarea = document.createElement('textarea');
+            textarea.rows = 5;
+            textarea.setAttribute('aria-label', 'Interpretation context');
+            textarea.style.width = '100%';
+            textarea.style.minHeight = '110px';
+            textarea.style.boxSizing = 'border-box';
+            textarea.style.resize = 'vertical';
+            textarea.style.font = 'inherit';
+            textarea.style.display = 'block';
+            contextContainer.appendChild(textarea);
+
+            const introductionValue = () => {
+                const value = ui.introduction.value();
+                return value === null || value === undefined ? '' : String(value);
+            };
+            textarea.value = introductionValue();
+
+            textarea.addEventListener('change', () => {
+                if (textarea.value !== introductionValue())
+                    ui.introduction.setValue(textarea.value);
+            });
+            ui.introduction.on(ui.introduction.getTrigger('value'), () => {
+                const value = introductionValue();
+                if (textarea.value !== value)
+                    textarea.value = value;
+            });
+        }
+
         const container = ui.generationControl.$el[0];
         if (container.querySelector('button'))
             return;

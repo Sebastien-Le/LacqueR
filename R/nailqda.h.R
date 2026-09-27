@@ -45,6 +45,7 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             private$..introduction <- jmvcore::OptionString$new(
                 "introduction",
                 introduction,
+                hidden=TRUE,
                 default="")
             private$..model <- jmvcore::OptionString$new(
                 "model",
