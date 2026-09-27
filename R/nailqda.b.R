@@ -281,7 +281,7 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
       }
       response <- state$response
       self$results$response$setContent(
-        response_to_html(clean_response_text(to_text(response)))
+        .nailqda_response_to_html(.nailqda_clean_response_text(to_text(response)))
       )
       publish_status()
     }

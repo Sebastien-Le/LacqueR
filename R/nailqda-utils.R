@@ -7,7 +7,7 @@
 }
 
 
-clean_response_text <- function(text) {
+.nailqda_clean_response_text <- function(text) {
   block <- paste0(
     "(?s)<!-- NAILER_PRODUCT_INTERPRETATION[[:space:]]+",
     "(?:(?!<!--|-->|END_NAILER_PRODUCT_INTERPRETATION).)*",
@@ -53,7 +53,7 @@ clean_response_text <- function(text) {
 
 
 # Escape untrusted text before introducing our own HTML tags.
-response_to_html <- function(text) {
+.nailqda_response_to_html <- function(text) {
   escapes <- c("&" = "&amp;", "<" = "&lt;", ">" = "&gt;",
                '"' = "&quot;", "'" = "&#39;", "`" = "&#96;",
                "\\" = "&#92;", "@" = "&#64;", "+" = "&#43;")

@@ -4,7 +4,7 @@ test_that("supported Markdown is rendered", {
     "- premier", "* second", "", "1. un", "3. trois", "",
     "Texte **gras** et *italique*.", sep = "\n"
   )
-  html <- response_to_html(text)
+  html <- .nailqda_response_to_html(text)
 
   expect_match(html, "<h1>Titre</h1>", fixed = TRUE)
   expect_match(html, "<h2>Sous-titre</h2>", fixed = TRUE)
@@ -24,7 +24,7 @@ test_that("HTML metacharacters and hostile HTML are escaped", {
     '<div style="background:url(javascript:x)">texte</div>',
     sep = "\n"
   )
-  html <- response_to_html(text)
+  html <- .nailqda_response_to_html(text)
 
   expect_match(html, "5 &lt; 7 &gt; 3 &amp; oui", fixed = TRUE)
   expect_match(html, "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;", fixed = TRUE)
@@ -35,7 +35,7 @@ test_that("HTML metacharacters and hostile HTML are escaped", {
 })
 
 test_that("links and remote images remain inactive text", {
-  html <- response_to_html(paste(
+  html <- .nailqda_response_to_html(paste(
     "[danger](javascript:alert(1))",
     "![remote](https://example.invalid/image.png)", sep = "\n"
   ))
@@ -46,10 +46,10 @@ test_that("links and remote images remain inactive text", {
 })
 
 test_that("knitr inline code and chunks cannot remain active", {
-  inline <- response_to_html("Valeur: `r system('echo unsafe')`")
-  chunk <- response_to_html(paste("```{r}", "system('echo unsafe')", "```",
+  inline <- .nailqda_response_to_html("Valeur: `r system('echo unsafe')`")
+  chunk <- .nailqda_response_to_html(paste("```{r}", "system('echo unsafe')", "```",
                                   sep = "\n"))
-  ordinary <- response_to_html("Des `backticks` ordinaires")
+  ordinary <- .nailqda_response_to_html("Des `backticks` ordinaires")
 
   expect_false(grepl("`", paste(inline, chunk, ordinary), fixed = TRUE))
   expect_match(inline, "&#96;r system(&#39;echo unsafe&#39;)&#96;", fixed = TRUE)
@@ -58,5 +58,5 @@ test_that("knitr inline code and chunks cannot remain active", {
 })
 
 test_that("empty responses produce empty HTML", {
-  expect_identical(response_to_html(""), "")
+  expect_identical(.nailqda_response_to_html(""), "")
 })
