@@ -1,6 +1,6 @@
 ---
 name: nailqda
-title: AI-assisted QDA (PoC)
+title: AI-assisted QDA
 jrs: '1.1'
 
 items:
@@ -10,8 +10,19 @@ items:
     clearWith: []
 
   - name: status
-    title: NaileR integration
+    title: Interpretation status
     type: Preformatted
+    clearWith:
+      - product
+      - panelist
+      - attributes
+      - introduction
+      - model
+      - generationRequest
+
+  - name: response
+    title: Product interpretation
+    type: Html
     clearWith:
       - product
       - panelist
@@ -21,8 +32,9 @@ items:
       - generationRequest
 
   - name: evidence
-    title: Evidence produced by NaileR
+    title: Supporting statistical evidence
     type: Preformatted
+    visible: (showEvidence)
     clearWith:
       - product
       - panelist
@@ -30,23 +42,13 @@ items:
       - introduction
 
   - name: prompt
-    title: Prompt produced by NaileR
+    title: Generation prompt
     type: Preformatted
+    visible: (showPrompt)
     clearWith:
       - product
       - panelist
       - attributes
       - introduction
-      
-  - name: response
-    title: LLM interpretation
-    type: Html
-    clearWith:
-      - product
-      - panelist
-      - attributes
-      - introduction
-      - model
-      - generationRequest
 
 ...

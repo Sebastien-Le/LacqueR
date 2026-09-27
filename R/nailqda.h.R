@@ -11,6 +11,8 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             attributes = NULL,
             introduction = "",
             model = "mistral-small3.2",
+            showEvidence = FALSE,
+            showPrompt = FALSE,
             generationRequest = "", ...) {
 
             super$initialize(
@@ -48,6 +50,14 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 "model",
                 model,
                 default="mistral-small3.2")
+            private$..showEvidence <- jmvcore::OptionBool$new(
+                "showEvidence",
+                showEvidence,
+                default=FALSE)
+            private$..showPrompt <- jmvcore::OptionBool$new(
+                "showPrompt",
+                showPrompt,
+                default=FALSE)
             private$..generationRequest <- jmvcore::OptionString$new(
                 "generationRequest",
                 generationRequest,
@@ -59,6 +69,8 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             self$.addOption(private$..attributes)
             self$.addOption(private$..introduction)
             self$.addOption(private$..model)
+            self$.addOption(private$..showEvidence)
+            self$.addOption(private$..showPrompt)
             self$.addOption(private$..generationRequest)
         }),
     active = list(
@@ -67,6 +79,8 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
         attributes = function() private$..attributes$value,
         introduction = function() private$..introduction$value,
         model = function() private$..model$value,
+        showEvidence = function() private$..showEvidence$value,
+        showPrompt = function() private$..showPrompt$value,
         generationRequest = function() private$..generationRequest$value),
     private = list(
         ..product = NA,
@@ -74,6 +88,8 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
         ..attributes = NA,
         ..introduction = NA,
         ..model = NA,
+        ..showEvidence = NA,
+        ..showPrompt = NA,
         ..generationRequest = NA)
 )
 
@@ -83,16 +99,16 @@ nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
     active = list(
         generationState = function() private$.items[["generationState"]],
         status = function() private$.items[["status"]],
+        response = function() private$.items[["response"]],
         evidence = function() private$.items[["evidence"]],
-        prompt = function() private$.items[["prompt"]],
-        response = function() private$.items[["response"]]),
+        prompt = function() private$.items[["prompt"]]),
     private = list(),
     public=list(
         initialize=function(options) {
             super$initialize(
                 options=options,
                 name="",
-                title="AI-assisted QDA (PoC)")
+                title="AI-assisted QDA")
             self$add(jmvcore::Preformatted$new(
                 options=options,
                 name="generationState",
@@ -101,7 +117,18 @@ nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             self$add(jmvcore::Preformatted$new(
                 options=options,
                 name="status",
-                title="NaileR integration",
+                title="Interpretation status",
+                clearWith=list(
+                    "product",
+                    "panelist",
+                    "attributes",
+                    "introduction",
+                    "model",
+                    "generationRequest")))
+            self$add(jmvcore::Html$new(
+                options=options,
+                name="response",
+                title="Product interpretation",
                 clearWith=list(
                     "product",
                     "panelist",
@@ -112,7 +139,8 @@ nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             self$add(jmvcore::Preformatted$new(
                 options=options,
                 name="evidence",
-                title="Evidence produced by NaileR",
+                title="Supporting statistical evidence",
+                visible="(showEvidence)",
                 clearWith=list(
                     "product",
                     "panelist",
@@ -121,23 +149,13 @@ nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             self$add(jmvcore::Preformatted$new(
                 options=options,
                 name="prompt",
-                title="Prompt produced by NaileR",
+                title="Generation prompt",
+                visible="(showPrompt)",
                 clearWith=list(
                     "product",
                     "panelist",
                     "attributes",
-                    "introduction")))
-            self$add(jmvcore::Html$new(
-                options=options,
-                name="response",
-                title="LLM interpretation",
-                clearWith=list(
-                    "product",
-                    "panelist",
-                    "attributes",
-                    "introduction",
-                    "model",
-                    "generationRequest")))}))
+                    "introduction")))}))
 
 nailqdaBase <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
     "nailqdaBase",
@@ -160,7 +178,7 @@ nailqdaBase <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 weightsSupport = 'auto')
         }))
 
-#' AI-assisted QDA (PoC)
+#' AI-assisted QDA
 #'
 #' 
 #' @param data .
@@ -169,14 +187,16 @@ nailqdaBase <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
 #' @param attributes .
 #' @param introduction .
 #' @param model .
+#' @param showEvidence .
+#' @param showPrompt .
 #' @param generationRequest .
 #' @return A results object containing:
 #' \tabular{llllll}{
 #'   \code{results$generationState} \tab \tab \tab \tab \tab a preformatted \cr
 #'   \code{results$status} \tab \tab \tab \tab \tab a preformatted \cr
+#'   \code{results$response} \tab \tab \tab \tab \tab a html \cr
 #'   \code{results$evidence} \tab \tab \tab \tab \tab a preformatted \cr
 #'   \code{results$prompt} \tab \tab \tab \tab \tab a preformatted \cr
-#'   \code{results$response} \tab \tab \tab \tab \tab a html \cr
 #' }
 #'
 #' @export
@@ -187,6 +207,8 @@ nailqda <- function(
     attributes,
     introduction = "",
     model = "mistral-small3.2",
+    showEvidence = FALSE,
+    showPrompt = FALSE,
     generationRequest = "") {
 
     if ( ! requireNamespace("jmvcore", quietly=TRUE))
@@ -211,6 +233,8 @@ nailqda <- function(
         attributes = attributes,
         introduction = introduction,
         model = model,
+        showEvidence = showEvidence,
+        showPrompt = showPrompt,
         generationRequest = generationRequest)
 
     analysis <- nailqdaClass$new(

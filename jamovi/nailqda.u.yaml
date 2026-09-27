@@ -1,4 +1,4 @@
-title: AI-assisted QDA (PoC)
+title: AI-assisted QDA
 name: nailqda
 jus: '3.0'
 stage: 0
@@ -64,3 +64,13 @@ children:
 
           - type: CustomControl
             name: generationControl
+
+  - type: CollapseBox
+    label: Additional output
+    collapsed: true
+    children:
+      - type: CheckBox
+        name: showEvidence
+
+      - type: CheckBox
+        name: showPrompt

@@ -12,11 +12,11 @@ description: >-
   More about what it does (maybe more than one line) Use four spaces when
   indenting paragraphs within the Description.
 analyses:
-  - title: AI-assisted QDA (PoC)
+  - title: AI-assisted QDA
     name: nailqda
     ns: LacqueR
     menuGroup: LacqueR
-    menuTitle: AI-assisted QDA (PoC)
+    menuTitle: AI-assisted QDA
 usesNative: true
 minApp: 1.0.8
 

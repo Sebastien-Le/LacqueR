@@ -111,7 +111,6 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
         model = model
       )
       signature <- .nailqda_input_signature(variables, qda_args)
-      prepared <- identical(signature, state$preparedSignature)
       if (!identical(signature, state$inputSignature)) {
         state["response"] <- list(NULL)
         state$status <- "Ready"
@@ -162,6 +161,7 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
         return()
       }
       state$preparedSignature <- signature
+      prepared <- identical(signature, state$preparedSignature)
       evidence <- preview$evidence
       prompt <- preview$prompt
 

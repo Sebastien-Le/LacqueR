@@ -1,6 +1,6 @@
 ---
 name:  nailqda
-title: AI-assisted QDA (PoC)
+title: AI-assisted QDA
 menuGroup: LacqueR
 version: '1.0.0'
 jas: '1.2'
@@ -42,6 +42,16 @@ options:
     title: Ollama model
     type: String
     default: "mistral-small3.2"
+
+  - name: showEvidence
+    title: Supporting statistical evidence
+    type: Bool
+    default: false
+
+  - name: showPrompt
+    title: Generation prompt
+    type: Bool
+    default: false
 
   - name: generationRequest
     type: String
