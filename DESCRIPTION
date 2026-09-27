@@ -1,14 +1,27 @@
 Package: LacqueR
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.0.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: AI-Assisted Interpretation of Statistical Analyses
+Version: 0.1.0
+Authors@R: c(
+    person(
+        "Sébastien", "Lê",
+        email = "sebastien.le@institut-agro.fr",
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0000-0001-8814-6714")
+    )
+    )
+Description: Provides a jamovi interface to NaileR for evidence-grounded,
+    AI-assisted interpretation of statistical analyses. Statistical evidence,
+    generation prompts, and model responses are kept as distinct inspectable
+    artifacts. The initial analysis supports sensory quantitative descriptive
+    analysis using a locally hosted language model through Ollama. Parts of
+    the codebase were developed using AI-assisted code generation and were
+    reviewed and tested by the maintainer.
+License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
+URL: https://github.com/Sebastien-Le/LacqueR
+BugReports: https://github.com/Sebastien-Le/LacqueR/issues
 Imports: jmvcore (>= 0.8.5), R6, FactoMineR, SensoMineR, NaileR, ollamar
 Suggests:
     testthat (>= 3.0.0)
