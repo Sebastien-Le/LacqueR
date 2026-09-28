@@ -28,12 +28,47 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
         state$consumedRequests <- c(state$consumedRequests, request)
       }
 
+      report_request <- self$options$reportRequest
+      report_state <- self$results$reportState$state
+      if (is.null(report_state)) {
+        restored_request <- if (is.null(report_request) || is.na(report_request))
+          "" else as.character(report_request)
+        report_state <- list(
+          lastRequest = restored_request,
+          consumedRequests = if (nzchar(restored_request))
+            restored_request else character(),
+          status = "Ready", message = "", path = NULL, duration = NULL
+        )
+      }
+      report_event <- .nailqda_consume_report_request(
+        report_state, report_request)
+      report_state <- report_event$state
+      new_report_request <- report_event$fresh
+      if (!new_report_request &&
+          identical(report_state$status, "Generating report…")) {
+        report_state$status <- "Error"
+        report_state$message <- paste(
+          "Previous report generation did not complete.",
+          "Click Generate PowerPoint report to retry."
+        )
+        report_state$duration <- NULL
+      }
+
       publish_status <- function() {
         self$results$generationState$setState(state)
         text <- c(state$status, state$message)
         if (!is.null(state$duration))
           text <- c(text, sprintf("Generation elapsed: %.2f s", state$duration))
         self$results$status$setContent(paste(text[nzchar(text)], collapse = "\n"))
+      }
+
+      publish_report_status <- function() {
+        self$results$reportState$setState(report_state)
+        text <- c(report_state$status, report_state$message)
+        if (!is.null(report_state$duration))
+          text <- c(text, sprintf("Report elapsed: %.2f s", report_state$duration))
+        self$results$reportStatus$setContent(
+          paste(text[nzchar(text)], collapse = "\n"))
       }
 
       if (is.null(self$options$product) || is.null(self$options$panelist) ||
@@ -49,6 +84,16 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
         self$results$evidence$setContent("")
         self$results$prompt$setContent("")
         publish_status()
+        if (new_report_request) {
+          report_state$status <- "Error"
+          report_state$message <- paste(
+            "Generate an up-to-date interpretation before creating",
+            "the PowerPoint report."
+          )
+          report_state$path <- NULL
+          report_state$duration <- NULL
+        }
+        publish_report_status()
         return()
       }
 
@@ -124,6 +169,7 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
       }
       state$inputSignature <- signature
       publish_status()
+      publish_report_status()
 
       # Keep the null graphics device around each NaileR call.
       run_qda <- function(generate) {
@@ -158,6 +204,13 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
         self$results$evidence$setContent("")
         self$results$prompt$setContent("")
         publish_status()
+        if (new_report_request) {
+          report_state$status <- "Error"
+          report_state$message <- paste("NaileR QDA failed:", preview$error)
+          report_state$path <- NULL
+          report_state$duration <- NULL
+        }
+        publish_report_status()
         return()
       }
       state$preparedSignature <- signature
@@ -284,6 +337,49 @@ nailqdaClass <- if (requireNamespace('jmvcore')) R6::R6Class(
         .nailqda_response_to_html(.nailqda_clean_response_text(to_text(response)))
       )
       publish_status()
+
+      if (new_report_request) {
+        current_response <- identical(state$responseSignature, signature) &&
+          .nailqda_valid_response(state$response)
+        if (!current_response) {
+          report_state$status <- "Error"
+          report_state$message <- paste(
+            "Generate an up-to-date interpretation before creating",
+            "the PowerPoint report."
+          )
+          report_state$path <- NULL
+          report_state$duration <- NULL
+        } else {
+          report_state$status <- "Generating report…"
+          report_state$message <- ""
+          report_state$path <- NULL
+          report_state$duration <- NULL
+          publish_report_status()
+          # Persist the consumed identifier before the file-writing side effect.
+          if (is.function(private$.statePathSource))
+            self$.save()
+          private$.checkpoint()
+
+          started <- proc.time()[["elapsed"]]
+          reported <- tryCatch({
+            path <- .nailqda_validate_report_path(self$options$reportPath)
+            report <- .nailqda_build_pptx(introduction, state$response)
+            list(path = .nailqda_write_pptx(report, path))
+          }, error = failure)
+          report_state$duration <- unname(
+            proc.time()[["elapsed"]] - started)
+          if (!is.null(reported$error)) {
+            report_state$status <- "Error"
+            report_state$message <- reported$error
+            report_state$path <- NULL
+          } else {
+            report_state$status <- "Complete"
+            report_state$message <- paste("Created:", reported$path)
+            report_state$path <- reported$path
+          }
+        }
+      }
+      publish_report_status()
     }
   )
 )

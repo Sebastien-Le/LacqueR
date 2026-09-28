@@ -22,7 +22,8 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/Sebastien-Le/LacqueR
 BugReports: https://github.com/Sebastien-Le/LacqueR/issues
-Imports: jmvcore (>= 0.8.5), R6, FactoMineR, SensoMineR, NaileR, ollamar
+Imports: jmvcore (>= 0.8.5), R6, FactoMineR, SensoMineR, NaileR, ollamar,
+    officer
 Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

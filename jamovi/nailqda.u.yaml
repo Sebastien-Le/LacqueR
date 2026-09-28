@@ -74,3 +74,15 @@ children:
 
       - type: CheckBox
         name: showPrompt
+
+  - type: CollapseBox
+    label: PowerPoint report
+    collapsed: true
+    children:
+      - type: TextBox
+        name: reportPath
+        format: string
+        width: large
+
+      - type: CustomControl
+        name: reportControl

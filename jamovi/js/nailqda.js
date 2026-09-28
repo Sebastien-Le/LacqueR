@@ -56,9 +56,25 @@ module.exports = {
             update();
             if (button.disabled)
                 return;
-            const words = window.crypto.getRandomValues(new Uint32Array(4));
-            const id = Array.from(words, word => word.toString(16).padStart(8, '0')).join('');
-            ui.generationRequest.setValue(id);
+            ui.generationRequest.setValue(createRequestId());
+        });
+
+        const reportContainer = ui.reportControl.$el[0];
+        if (reportContainer.querySelector('button'))
+            return;
+
+        const reportButton = document.createElement('button');
+        reportButton.type = 'button';
+        reportButton.className = 'jmv-action-button';
+        reportButton.textContent = 'Generate PowerPoint report';
+        reportContainer.appendChild(reportButton);
+        reportButton.addEventListener('click', () => {
+            ui.reportRequest.setValue(createRequestId());
         });
     }
 };
+
+function createRequestId() {
+    const words = window.crypto.getRandomValues(new Uint32Array(4));
+    return Array.from(words, word => word.toString(16).padStart(8, '0')).join('');
+}

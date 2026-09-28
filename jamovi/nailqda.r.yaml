@@ -9,6 +9,11 @@ items:
     visible: false
     clearWith: []
 
+  - name: reportState
+    type: Preformatted
+    visible: false
+    clearWith: []
+
   - name: status
     title: Interpretation status
     type: Preformatted
@@ -50,5 +55,11 @@ items:
       - panelist
       - attributes
       - introduction
+
+  - name: reportStatus
+    title: PowerPoint report status
+    type: Preformatted
+    clearWith:
+      - reportRequest
 
 ...

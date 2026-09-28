@@ -13,7 +13,9 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             model = "mistral-small3.2",
             showEvidence = FALSE,
             showPrompt = FALSE,
-            generationRequest = "", ...) {
+            generationRequest = "",
+            reportPath = "",
+            reportRequest = "", ...) {
 
             super$initialize(
                 package="LacqueR",
@@ -64,6 +66,15 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                 generationRequest,
                 hidden=TRUE,
                 default="")
+            private$..reportPath <- jmvcore::OptionString$new(
+                "reportPath",
+                reportPath,
+                default="")
+            private$..reportRequest <- jmvcore::OptionString$new(
+                "reportRequest",
+                reportRequest,
+                hidden=TRUE,
+                default="")
 
             self$.addOption(private$..product)
             self$.addOption(private$..panelist)
@@ -73,6 +84,8 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             self$.addOption(private$..showEvidence)
             self$.addOption(private$..showPrompt)
             self$.addOption(private$..generationRequest)
+            self$.addOption(private$..reportPath)
+            self$.addOption(private$..reportRequest)
         }),
     active = list(
         product = function() private$..product$value,
@@ -82,7 +95,9 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
         model = function() private$..model$value,
         showEvidence = function() private$..showEvidence$value,
         showPrompt = function() private$..showPrompt$value,
-        generationRequest = function() private$..generationRequest$value),
+        generationRequest = function() private$..generationRequest$value,
+        reportPath = function() private$..reportPath$value,
+        reportRequest = function() private$..reportRequest$value),
     private = list(
         ..product = NA,
         ..panelist = NA,
@@ -91,7 +106,9 @@ nailqdaOptions <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
         ..model = NA,
         ..showEvidence = NA,
         ..showPrompt = NA,
-        ..generationRequest = NA)
+        ..generationRequest = NA,
+        ..reportPath = NA,
+        ..reportRequest = NA)
 )
 
 nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
@@ -99,10 +116,12 @@ nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
     inherit = jmvcore::Group,
     active = list(
         generationState = function() private$.items[["generationState"]],
+        reportState = function() private$.items[["reportState"]],
         status = function() private$.items[["status"]],
         response = function() private$.items[["response"]],
         evidence = function() private$.items[["evidence"]],
-        prompt = function() private$.items[["prompt"]]),
+        prompt = function() private$.items[["prompt"]],
+        reportStatus = function() private$.items[["reportStatus"]]),
     private = list(),
     public=list(
         initialize=function(options) {
@@ -113,6 +132,11 @@ nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
             self$add(jmvcore::Preformatted$new(
                 options=options,
                 name="generationState",
+                visible=FALSE,
+                clearWith=list()))
+            self$add(jmvcore::Preformatted$new(
+                options=options,
+                name="reportState",
                 visible=FALSE,
                 clearWith=list()))
             self$add(jmvcore::Preformatted$new(
@@ -156,7 +180,13 @@ nailqdaResults <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
                     "product",
                     "panelist",
                     "attributes",
-                    "introduction")))}))
+                    "introduction")))
+            self$add(jmvcore::Preformatted$new(
+                options=options,
+                name="reportStatus",
+                title="PowerPoint report status",
+                clearWith=list(
+                    "reportRequest")))}))
 
 nailqdaBase <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
     "nailqdaBase",
@@ -191,13 +221,17 @@ nailqdaBase <- if (requireNamespace("jmvcore", quietly=TRUE)) R6::R6Class(
 #' @param showEvidence .
 #' @param showPrompt .
 #' @param generationRequest .
+#' @param reportPath .
+#' @param reportRequest .
 #' @return A results object containing:
 #' \tabular{llllll}{
 #'   \code{results$generationState} \tab \tab \tab \tab \tab a preformatted \cr
+#'   \code{results$reportState} \tab \tab \tab \tab \tab a preformatted \cr
 #'   \code{results$status} \tab \tab \tab \tab \tab a preformatted \cr
 #'   \code{results$response} \tab \tab \tab \tab \tab a html \cr
 #'   \code{results$evidence} \tab \tab \tab \tab \tab a preformatted \cr
 #'   \code{results$prompt} \tab \tab \tab \tab \tab a preformatted \cr
+#'   \code{results$reportStatus} \tab \tab \tab \tab \tab a preformatted \cr
 #' }
 #'
 #' @export
@@ -210,7 +244,9 @@ nailqda <- function(
     model = "mistral-small3.2",
     showEvidence = FALSE,
     showPrompt = FALSE,
-    generationRequest = "") {
+    generationRequest = "",
+    reportPath = "",
+    reportRequest = "") {
 
     if ( ! requireNamespace("jmvcore", quietly=TRUE))
         stop("nailqda requires jmvcore to be installed (restart may be required)")
@@ -236,7 +272,9 @@ nailqda <- function(
         model = model,
         showEvidence = showEvidence,
         showPrompt = showPrompt,
-        generationRequest = generationRequest)
+        generationRequest = generationRequest,
+        reportPath = reportPath,
+        reportRequest = reportRequest)
 
     analysis <- nailqdaClass$new(
         options = options,

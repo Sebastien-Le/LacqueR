@@ -58,4 +58,14 @@ options:
     type: String
     hidden: true
     default: ""
+
+  - name: reportPath
+    title: Save to
+    type: String
+    default: ""
+
+  - name: reportRequest
+    type: String
+    hidden: true
+    default: ""
 ...
